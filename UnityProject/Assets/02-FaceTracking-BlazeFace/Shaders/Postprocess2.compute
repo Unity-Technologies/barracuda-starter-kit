@@ -1,0 +1,61 @@
+#pragma kernel Postprocess2
+
+//
+// 2nd postprocessor (overlap removal)
+//
+
+#include "Common.hlsl"
+
+#define IOU_THRESHOLD 0.3
+
+// Input uniforms
+ConsumeStructuredBuffer<Detection> _Input;
+ByteAddressBuffer _Count;
+
+// Output uniforms
+AppendStructuredBuffer<Detection> _Output;
+
+// Detection entry cache
+groupshared Detection _entry[MAX_DETECTION];
+
+[numthreads(1, 1, 1)]
+void Postprocess2(uint3 id : SV_DispatchThreadID)
+{
+    // Detection entry cache initialization
+    uint entry_count = _Count.Load(0);
+    if (entry_count == 0) return;
+
+    for (uint i = 0; i < entry_count; i++)
+        _entry[i] = _Input.Consume();
+
+    // Try all the permutations.
+    for (i = 0; i < entry_count - 1; i++)
+    {
+        if (_entry[i].score == 0) continue;
+
+        // Variables for accumulation
+        float max_score = _entry[i].score;
+        float4x4 g_acc = DetectionToMatrix(_entry[i]) * max_score;
+        float s_acc = max_score;
+
+        for (uint j = i + 1; j < entry_count; j++)
+        {
+            if (_entry[j].score == 0) continue;
+
+            // Overlap test
+            if (CalculateIOU(_entry[i], _entry[j]) < IOU_THRESHOLD) continue;
+
+            // Accumulation
+            float score = _entry[j].score;
+            g_acc += DetectionToMatrix(_entry[j]) * score;
+            s_acc += score;
+            max_score = max(max_score, score);
+
+            // Remove the entry.
+            _entry[j].score = 0;
+        }
+
+        // Output the blended detection.
+        _Output.Append(MatrixToDetection(g_acc / s_acc, max_score));
+    }
+}
