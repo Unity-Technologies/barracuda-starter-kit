@@ -11,3 +11,7 @@ MobileNetV2 [pytorch.org](https://pytorch.org/hub/pytorch_vision_mobilenet_v2) e
 ## Face Tracking 
 
 [MediaPipe BlazeFace](https://sites.google.com/view/perception-cv4arvr/blazeface) model. Simplified real time camera face tracking Barracuda demo [project](https://github.com/keijiro/BlazeFaceBarracuda) originally created by Keijiro Takahashi.
+
+## Unity
+
+This project requires Unity 2019.4.29f1 or later.
