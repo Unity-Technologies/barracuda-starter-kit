@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/02-FaceTracking-BlazeFace/02-FaceTracking-BlazeFace.unity
     guid: 96aacd413c7c37f4e9df399114082954
+  - enabled: 0
+    path: Assets/03-MultiObjectStaticImageRecognition-YoloV3Tiny/03-MultiObjectStaticImageRecognition-YoloV3Tiny.unity
+    guid: 9c3f3ab6fcc0d4e8395859b09bf8535d
   m_configObjects: {}

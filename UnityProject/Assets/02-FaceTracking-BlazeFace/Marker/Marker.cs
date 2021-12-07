@@ -5,7 +5,7 @@ namespace MediaPipe.BlazeFace {
 
 public sealed class Marker : MonoBehaviour
 {
-    public RunInference2.Detection detection { get; set; }
+    public RunInferenceBlazeFace.Detection detection { get; set; }
     
     [SerializeField] RectTransform[] _keyPoints;
 
