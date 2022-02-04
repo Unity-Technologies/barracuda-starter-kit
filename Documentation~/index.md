@@ -2,7 +2,7 @@
 
 This is a [Barracuda](https://github.com/Unity-Technologies/barracuda-release) demo library containing usage examples. All examples are also compatible with mobile platforms (iOS and Android) and WebGL (except the Face Tracking demo).
 
-Each example is placed in a separate folder with a demo scene and all the required resources. If you want to add your images, make to sure to check the Texture Import Settings on the example images.
+Each example is placed in a separate folder with a demo scene and all the required resources. If you want to add your images, make sure to check the Texture Import Settings on the example images.
 
 ## Static Image Recognition
 

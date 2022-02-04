@@ -13,7 +13,6 @@ public class RunInferenceYOLO : MonoBehaviour
     public RawImage displayImage;
     public NNModel srcModel;
     public TextAsset labelsAsset;
-    public bool useGPU = true;
     public Dropdown backendDropdown;
     public Transform displayLocation;
     public Font font;
@@ -25,6 +24,7 @@ public class RunInferenceYOLO : MonoBehaviour
     private Dictionary<string, Tensor> inputs = new Dictionary<string, Tensor>();
     private string[] labels;
     private RenderTexture targetRT;
+    private string inferenceBackend = "CSharpBurst";
     private const int amountOfClasses = 80;
     private const int box20Sections = 20;
     private const int box40Sections = 40;
@@ -67,20 +67,11 @@ public class RunInferenceYOLO : MonoBehaviour
         labels = labelsAsset.text.Split('\n');
         //load model
         model = ModelLoader.Load(srcModel);
-
-        #if UNITY_WEBGL
-            useGPU = false;
-            backendDropdown.enabled = false;
-        #endif
-        
         SelectBackendAndExecuteML();
     }
 
     public void ExecuteML(int imageID)
     {
-        #if UNITY_WEBGL
-            useGPU = false;
-        #endif
         ClearAnnotations();
         selectedImage = imageID;
         if (inputImage[selectedImage].width != 640 || inputImage[selectedImage].height != 640)
@@ -88,7 +79,19 @@ public class RunInferenceYOLO : MonoBehaviour
             Debug.LogError("Image resolution must be 640x640. Make sure Texture Import Settings are similar to the example images");
         }
         displayImage.texture = inputImage[selectedImage];
-        engine = WorkerFactory.CreateWorker(model, useGPU ? WorkerFactory.Device.GPU : WorkerFactory.Device.CPU);
+        
+        if (inferenceBackend == "CSharpBurst")
+        {
+            engine = WorkerFactory.CreateWorker(WorkerFactory.Type.CSharpBurst, model);
+        } 
+        else if (inferenceBackend == "ComputePrecompiled")
+        {
+            engine = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
+        } 
+        else if (inferenceBackend == "PixelShader")
+        {
+            engine = WorkerFactory.CreateWorker(WorkerFactory.Type.PixelShader, model);
+        }
         
         //preprocess image for input
         var input = new Tensor((inputImage[imageID]), 3);
@@ -129,7 +132,10 @@ public class RunInferenceYOLO : MonoBehaviour
     {
         List<string> options = new List<string> ();
         options.Add("CSharpBurst");
+        #if !UNITY_WEBGL
         options.Add("ComputePrecompiled");
+        #endif
+        options.Add("PixelShader");
         backendDropdown.ClearOptions ();
         backendDropdown.AddOptions(options);
     }
@@ -138,12 +144,15 @@ public class RunInferenceYOLO : MonoBehaviour
     {
         if (backendDropdown.options[backendDropdown.value].text == "CSharpBurst")
         {
-            useGPU = false;
+            inferenceBackend = "CSharpBurst";
         }
-        
-        if (backendDropdown.options[backendDropdown.value].text == "ComputePrecompiled")
+        else if (backendDropdown.options[backendDropdown.value].text == "ComputePrecompiled")
         {
-            useGPU = true;
+            inferenceBackend = "ComputePrecompiled";
+        }
+        else if (backendDropdown.options[backendDropdown.value].text == "PixelShader")
+        {
+            inferenceBackend = "PixelShader";
         }
         ExecuteML(selectedImage);
     }

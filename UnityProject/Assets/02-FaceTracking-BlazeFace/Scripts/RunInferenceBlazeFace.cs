@@ -39,6 +39,7 @@ public sealed class RunInferenceBlazeFace : MonoBehaviour
     
     public GameObject webglWarning;
     public UI.Dropdown _cameraDropdown;
+    public UI.Dropdown _backendDropdown;
 
     //
     // Detection structure. The layout of this structure must be matched with
@@ -98,6 +99,7 @@ public sealed class RunInferenceBlazeFace : MonoBehaviour
         Screen.orientation = ScreenOrientation.LandscapeLeft;
 
         AddCameraOptions();
+        AddBackendOptions();
         
         //initialization
         AllocateObjects();
@@ -142,6 +144,18 @@ public sealed class RunInferenceBlazeFace : MonoBehaviour
         _cameraDropdown.AddOptions(options);
     }
     
+    public void AddBackendOptions()
+    {
+        List<string> options = new List<string> ();
+        #if !UNITY_WEBGL
+        options.Add("ComputePrecompiled");
+        #endif
+        //options.Add("PixelShader"); //not supported with this demo
+        //options.Add("CSharpBurst"); //not supported with this demo
+        _backendDropdown.ClearOptions();
+        _backendDropdown.AddOptions(options);
+    }
+
     public void SwapCamera()
     {
         _webcam.Stop();
@@ -152,7 +166,7 @@ public sealed class RunInferenceBlazeFace : MonoBehaviour
     public void ProcessImage(Texture image, float threshold = 0.75f)
       => ExecuteML(image, threshold);
 
-    void AllocateObjects()
+    public void AllocateObjects()
     {
         var model = ModelLoader.Load(_model);
         _size = model.inputs[0].shape[6]; // Input tensor width
@@ -168,7 +182,18 @@ public sealed class RunInferenceBlazeFace : MonoBehaviour
         _countBuffer = new ComputeBuffer
           (1, sizeof(uint), ComputeBufferType.Raw);
 
-        _worker = model.CreateWorker();
+        if (_backendDropdown.options[_backendDropdown.value].text == "ComputePrecompiled")
+        {
+            _worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
+        }
+        else if (_backendDropdown.options[_backendDropdown.value].text == "PixelShader")
+        {
+            _worker = WorkerFactory.CreateWorker(WorkerFactory.Type.PixelShader, model);
+        }
+        else if (_backendDropdown.options[_backendDropdown.value].text == "CSharpBurst")
+        {
+            _worker = WorkerFactory.CreateWorker(WorkerFactory.Type.CSharpBurst, model);
+        }
     }
 
     void ExecuteML(Texture source, float threshold)
